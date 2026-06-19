@@ -7,7 +7,7 @@ import type { DashboardStats, LeanCluster } from "@/types";
 
 export const dynamic = "force-dynamic";
 
-const emptyStats: DashboardStats = { totalPosts: 0, totalPainPoints: 0, painPointsThisWeek: 0, topCategoryThisWeek: "—", categoryCounts: [], dailyCounts: [] };
+const emptyStats: DashboardStats = { totalPosts: 0, totalPainPoints: 0, painPointsThisWeek: 0, topCategoryThisWeek: "—", categoryCounts: [], dailyCounts: [], filteredOut: 0, weakClusters: 0 };
 
 export default async function DashboardPage() {
   let stats = emptyStats;
@@ -30,6 +30,8 @@ export default async function DashboardPage() {
         <Stat icon={<Sparkles size={18} />} label="Pain points found" value={stats.totalPainPoints.toLocaleString()} note="Validated unmet needs" />
         <Stat icon={<Activity size={18} />} label="New this week" value={stats.painPointsThisWeek.toLocaleString()} note="Fresh opportunity signals" />
         <Stat icon={<CircleDollarSign size={18} />} label="Leading category" value={stats.topCategoryThisWeek} note="Most active this week" text />
+        <Stat icon={<Database size={18} />} label="Filtered noise" value={stats.filteredOut.toLocaleString()} note="Low-quality posts rejected" />
+        <Stat icon={<Activity size={18} />} label="Weak clusters" value={stats.weakClusters.toLocaleString()} note="Hidden from leaderboard" />
       </section>
       <section className="chart-grid">
         <div className="panel"><div className="panel-heading"><div><span className="eyebrow">Distribution</span><h2>Pain points by category</h2></div></div><CategoryChart data={stats.categoryCounts} /></div>

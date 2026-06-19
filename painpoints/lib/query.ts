@@ -1,9 +1,11 @@
 import { isValidObjectId } from "mongoose";
 import { Cluster } from "@/lib/models/Cluster";
 import { PainPoint } from "@/lib/models/PainPoint";
+import { PipelineRun } from "@/lib/models/PipelineRun";
 import { Post } from "@/lib/models/Post";
+import { ScrapeRun } from "@/lib/models/ScrapeRun";
 import { connectToDatabase } from "@/lib/mongodb";
-import type { DashboardStats, LeanCluster, LeanPost } from "@/types";
+import type { DashboardStats, LeanCluster, LeanPost, ScrapeHealth } from "@/types";
 
 function serialize<T>(value: unknown): T {
   return JSON.parse(JSON.stringify(value)) as T;
@@ -14,9 +16,9 @@ export async function getDashboardData() {
   const weekStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const monthStart = new Date(Date.now() - 29 * 24 * 60 * 60 * 1000);
 
-  const [totalPosts, totalPainPoints, painPointsThisWeek, categories, daily, clusters] =
+  const [totalPosts, totalPainPoints, painPointsThisWeek, categories, daily, clusters, filteredOut, weakClusters] =
     await Promise.all([
-      Post.countDocuments(),
+      Post.countDocuments({ filteredOut: { $ne: true } }),
       PainPoint.countDocuments({ isPainPoint: true }),
       PainPoint.countDocuments({ isPainPoint: true, createdAt: { $gte: weekStart } }),
       PainPoint.aggregate([
@@ -29,7 +31,9 @@ export async function getDashboardData() {
         { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }, count: { $sum: 1 } } },
         { $sort: { _id: 1 } },
       ]),
-      Cluster.find().sort({ frequency: -1, avgIntensity: -1 }).limit(10).lean(),
+      Cluster.find({ isWeak: { $ne: true } }).sort({ opportunityScore: -1 }).limit(10).lean(),
+      Post.countDocuments({ filteredOut: true }),
+      Cluster.countDocuments({ isWeak: true }),
     ]);
 
   const weeklyCategories = await PainPoint.aggregate([
@@ -53,16 +57,51 @@ export async function getDashboardData() {
     topCategoryThisWeek: weeklyCategories[0]?._id ?? "—",
     categoryCounts: categories.map((item) => ({ name: item._id, count: item.count })),
     dailyCounts,
+    filteredOut,
+    weakClusters,
   };
   return { stats, clusters: serialize<LeanCluster[]>(clusters) };
 }
 
-export async function getClusters(sort = "frequency", category = "") {
+export async function getOpportunities(minDistinctAuthors = 2) {
   await connectToDatabase();
-  const sortField = ["frequency", "avgIntensity", "totalEngagementScore"].includes(sort)
+  const populate = {
+    path: "painPointIds",
+    populate: { path: "postId", model: "Post" },
+  };
+  let clusters = await Cluster.find({ distinctAuthors: { $gte: minDistinctAuthors } })
+    .sort({ opportunityScore: -1, distinctAuthors: -1 })
+    .populate(populate)
+    .lean();
+  let fellBack = false;
+  if (!clusters.length) {
+    fellBack = true;
+    clusters = await Cluster.find()
+      .sort({ opportunityScore: -1, frequency: -1 })
+      .populate(populate)
+      .lean();
+  }
+  return {
+    clusters: serialize<LeanCluster[]>(clusters),
+    fellBack,
+    minDistinctAuthors,
+  };
+}
+
+export async function getClusters(sort = "opportunityScore", category = "", includeWeak = false) {
+  await connectToDatabase();
+  const sortField = [
+    "opportunityScore",
+    "frequency",
+    "avgIntensity",
+    "totalEngagementScore",
+    "distinctAuthors",
+  ].includes(sort)
     ? sort
-    : "frequency";
-  const filter = category ? { category } : {};
+    : "opportunityScore";
+  const filter: Record<string, unknown> = {};
+  if (category) filter.category = category;
+  if (!includeWeak) filter.isWeak = { $ne: true };
   const clusters = await Cluster.find(filter)
     .sort({ [sortField]: -1 })
     .populate({
@@ -89,4 +128,41 @@ export async function getPosts(filter: Record<string, unknown> = {}, limit = 100
   await connectToDatabase();
   const posts = await Post.find(filter).sort({ publishedAt: -1 }).limit(limit).lean();
   return serialize<LeanPost[]>(posts);
+}
+
+export async function getPipelineHistory(limit = 50) {
+  await connectToDatabase();
+  const runs = await PipelineRun.find().sort({ startedAt: -1 }).limit(limit).lean();
+  return serialize<Array<{
+    _id: string;
+    startedAt: string;
+    finishedAt: string;
+    ok: boolean;
+    scrapeInserted: number;
+    scrapeFiltered: number;
+    scrapeErrors: number;
+    classified: number;
+    painPointsFound: number;
+    clusters: number;
+    weakClusters: number;
+    message?: string;
+  }>>(runs);
+}
+
+export async function getScrapeHealth(limit = 25) {
+  await connectToDatabase();
+  const runs = await ScrapeRun.find().sort({ ranAt: -1 }).limit(limit).lean();
+  return serialize<ScrapeHealth[]>(
+    runs.map((run) => {
+      const [subreddit, phrase] = run.key.split(":");
+      return {
+        subreddit,
+        phrase,
+        ranAt: run.ranAt,
+        found: run.found,
+        inserted: run.inserted,
+        filtered: run.filtered ?? 0,
+      };
+    }),
+  );
 }

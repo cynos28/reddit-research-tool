@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   if (!isAuthorizedCronRequest(request)) return unauthorizedResponse();
   try {
     const settings = await getScraperSettings();
-    const scrape = await scrapeAll(settings.subreddits, settings.phrases);
+    const scrape = await scrapeAll(settings.phrases);
     const classify = await classifyPendingPosts(25);
     const cluster = await clusterPainPoints();
     return Response.json({ ok: true, scrape, classify, cluster });

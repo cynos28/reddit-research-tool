@@ -1,6 +1,7 @@
 import { Settings } from "@/lib/models/Settings";
 import { connectToDatabase } from "@/lib/mongodb";
 import { getScraperSettings } from "@/lib/services/settings";
+import { validateSettings } from "@/lib/validation";
 
 export const runtime = "nodejs";
 
@@ -14,20 +15,15 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
-    await connectToDatabase();
-    const body = await request.json();
-    const clean = (items: unknown) =>
-      Array.isArray(items)
-        ? [...new Set(items.map(String).map((item) => item.trim()).filter(Boolean))].slice(0, 50)
-        : [];
-    const subreddits = clean(body.subreddits).map((item) => item.replace(/^r\//, ""));
-    const phrases = clean(body.phrases);
-    if (!subreddits.length || !phrases.length) {
-      return Response.json({ error: "At least one subreddit and phrase are required" }, { status: 400 });
+    const body = await request.json().catch(() => ({}));
+    const result = validateSettings(body);
+    if (!result.ok) {
+      return Response.json({ error: result.error, field: result.field }, { status: 400 });
     }
+    await connectToDatabase();
     const settings = await Settings.findOneAndUpdate(
       { key: "scraper" },
-      { key: "scraper", subreddits, phrases, updatedAt: new Date() },
+      { key: "scraper", ...result.value, updatedAt: new Date() },
       { new: true, upsert: true },
     );
     return Response.json(settings);

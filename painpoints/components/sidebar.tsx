@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Crosshair, FileText, Radar, Settings } from "lucide-react";
+import { BarChart3, Crosshair, FileText, History, Lightbulb, Radar, Settings } from "lucide-react";
 
 const links = [
   { href: "/", label: "Overview", icon: BarChart3 },
-  { href: "/clusters", label: "Opportunities", icon: Crosshair },
+  { href: "/opportunities", label: "Opportunities", icon: Lightbulb },
+  { href: "/clusters", label: "All clusters", icon: Crosshair },
   { href: "/posts", label: "Source posts", icon: FileText },
+  { href: "/history", label: "Run history", icon: History },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 

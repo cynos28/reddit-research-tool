@@ -11,6 +11,12 @@ export interface IPost {
   scrapedAt: Date;
   processed: boolean;
   engagementScore: number;
+  score: number;
+  numComments: number;
+  upvoteRatio: number;
+  normalizedHash: string;
+  filteredOut: boolean;
+  filterReason: string;
 }
 
 const PostSchema = new Schema<IPost>(
@@ -25,6 +31,12 @@ const PostSchema = new Schema<IPost>(
     scrapedAt: { type: Date, default: Date.now },
     processed: { type: Boolean, default: false, index: true },
     engagementScore: { type: Number, default: 0 },
+    score: { type: Number, default: 0 },
+    numComments: { type: Number, default: 0 },
+    upvoteRatio: { type: Number, default: 0 },
+    normalizedHash: { type: String, default: "", index: true },
+    filteredOut: { type: Boolean, default: false, index: true },
+    filterReason: { type: String, default: "" },
   },
   { versionKey: false },
 );

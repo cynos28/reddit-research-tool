@@ -13,12 +13,22 @@ export const CATEGORIES = [
 
 export type PainPointCategory = (typeof CATEGORIES)[number];
 
+export type Rubric = {
+  frequencySignal: number;
+  willingnessToPaySignal: number;
+  specificity: number;
+  solutionGap: number;
+};
+
 export type ClassificationResult = {
   isPainPoint: boolean;
   problemSummary: string;
   category: PainPointCategory;
   intensity: number;
   willingnessToPay: boolean;
+  confidence: number;
+  evidenceQuote: string;
+  rubric: Rubric;
 };
 
 export type DashboardStats = {
@@ -28,6 +38,8 @@ export type DashboardStats = {
   topCategoryThisWeek: string;
   categoryCounts: { name: string; count: number }[];
   dailyCounts: { date: string; count: number }[];
+  filteredOut: number;
+  weakClusters: number;
 };
 
 export type LeanPost = {
@@ -41,6 +53,9 @@ export type LeanPost = {
   matchedPhrase: string;
   processed: boolean;
   engagementScore?: number;
+  score?: number;
+  numComments?: number;
+  upvoteRatio?: number;
 };
 
 export type LeanPainPoint = {
@@ -51,6 +66,9 @@ export type LeanPainPoint = {
   category: string;
   intensity: number;
   willingnessToPay: boolean;
+  confidence: number;
+  evidenceQuote: string;
+  rubric: Rubric;
   createdAt: string;
 };
 
@@ -61,7 +79,24 @@ export type LeanCluster = {
   painPointIds: LeanPainPoint[] | string[];
   frequency: number;
   avgIntensity: number;
+  avgConfidence: number;
   totalEngagementScore: number;
   willingnessToPayCount: number;
+  distinctAuthors: number;
+  distinctSubreddits: number;
+  timeSpreadDays: number;
+  cohesion: number;
+  solutionSaturation: number;
+  opportunityScore: number;
+  isWeak: boolean;
   lastUpdated: string;
+};
+
+export type ScrapeHealth = {
+  phrase: string;
+  subreddit: string;
+  ranAt: string;
+  found: number;
+  inserted: number;
+  filtered: number;
 };

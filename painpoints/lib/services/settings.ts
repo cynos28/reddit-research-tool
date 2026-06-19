@@ -1,4 +1,4 @@
-import { DEFAULT_PHRASES, DEFAULT_SUBREDDITS } from "@/lib/constants";
+import { DEFAULT_PHRASES } from "@/lib/constants";
 import { Settings } from "@/lib/models/Settings";
 import { connectToDatabase } from "@/lib/mongodb";
 
@@ -9,7 +9,6 @@ export async function getScraperSettings() {
     {
       $setOnInsert: {
         key: "scraper",
-        subreddits: DEFAULT_SUBREDDITS,
         phrases: DEFAULT_PHRASES,
         updatedAt: new Date(),
       },

@@ -1,15 +1,13 @@
-import { isAuthorizedCronRequest, unauthorizedResponse } from "@/lib/auth";
 import { scrapeAll } from "@/lib/scraper";
 import { getScraperSettings } from "@/lib/services/settings";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
-export async function POST(request: Request) {
-  if (!isAuthorizedCronRequest(request)) return unauthorizedResponse();
+export async function POST() {
   try {
     const settings = await getScraperSettings();
-    const result = await scrapeAll(settings.subreddits, settings.phrases);
+    const result = await scrapeAll(settings.phrases);
     return Response.json(result);
   } catch (error) {
     return Response.json(

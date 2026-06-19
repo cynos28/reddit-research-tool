@@ -5,6 +5,8 @@ export interface IScrapeRun {
   ranAt: Date;
   found: number;
   inserted: number;
+  filtered: number;
+  errorCount: number;
 }
 
 const ScrapeRunSchema = new Schema<IScrapeRun>(
@@ -13,6 +15,8 @@ const ScrapeRunSchema = new Schema<IScrapeRun>(
     ranAt: { type: Date, required: true, index: true },
     found: { type: Number, default: 0 },
     inserted: { type: Number, default: 0 },
+    filtered: { type: Number, default: 0 },
+    errorCount: { type: Number, default: 0 },
   },
   { versionKey: false },
 );
