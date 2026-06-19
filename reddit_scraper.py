@@ -1,5 +1,5 @@
 """
-Reddit Pain Point Research Script (personal, non-commercial, read-only)
+Reddit Pain - Point Research Script (personal, non-commercial, read-only)
 -------------------------------------------------------------------------
 Searches public subreddits for posts matching common "unmet need" phrases,
 for personal market research purposes only. Does not post, comment, vote,
